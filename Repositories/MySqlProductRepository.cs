@@ -1,9 +1,11 @@
 using inventorySystem.Models;
 using MySql.Data.MySqlClient;
+using Newtonsoft.Json.Serialization;
 
 namespace inventorySystem.Repositories;
 
 public class MySqlProductRepository : IProductRepository
+
 {
     private readonly string _connectionString;
     public MySqlProductRepository(string connectionString)
@@ -44,11 +46,59 @@ public class MySqlProductRepository : IProductRepository
 
     public List<Product> GetAllProducts()
     {
-        throw new NotImplementedException();
+        var products = new List<Product>();
+        using (var connection = new MySqlConnection(_connectionString))
+        {
+            connection.Open();
+            string selectSql = "SELECT * FROM products";
+            using (MySqlCommand cmd = new MySqlCommand(selectSql, connection))
+            {
+                using (MySqlDataReader reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        products.Add(new Product(reader.GetInt32("id"), 
+                                                reader.GetString("name"), 
+                                                reader.GetDecimal("price"), 
+                                                reader.GetInt32("quantity"))
+                        {
+                            Status = (Product.ProductStatus)reader.GetInt32("status")
+                        });
+                    }
+                }
+            }
+        }
+
+        return products;
     }
 
     public Product GetProductById(int id)
     {
-        throw new NotImplementedException();
+        Product product = null;
+        using (var connection = new MySqlConnection(_connectionString))
+        {
+            connection.Open();
+            string selectSql = "SELECT * FROM products WHERE id = @id";
+            using (MySqlCommand cmd = new MySqlCommand(selectSql, connection))
+            {   
+                cmd.Parameters.AddWithValue("@id", id);
+                using (MySqlDataReader reader = cmd.ExecuteReader())
+                {
+                    if (reader.Read())
+                    {
+                        product =new Product (reader.GetInt32("id"), 
+                            reader.GetString("name"), 
+                            reader.GetDecimal("price"), 
+                            reader.GetInt32("quantity"))
+                        {
+                            Status = (Product.ProductStatus)reader.GetInt32("status")
+                        };  
+                    }
+                }
+
+            }
+        }
+
+        return product;
     }
 }
