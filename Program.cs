@@ -2,12 +2,14 @@
 
 using inventorySystem.Models;
 using inventorySystem.Repositories;
+using inventorySystem.Services;
 
 const string mysql_connetion_string = 
     "Server=localhost;Port=3306;Database=inventory_db;uid=root;pwd=Ji3g4284;";
 
-MySqlProductRepository ProductRepository = new MySqlProductRepository(mysql_connetion_string);
-
+//MySqlProductRepository ProductRepository = new MySqlProductRepository(mysql_connetion_string);
+IProductRepository productRepository = new MySqlProductRepository(mysql_connetion_string);
+InventoryService inventoryService = new InventoryService(productRepository);
 void RunMenu()
 {
     while (true)
@@ -41,24 +43,23 @@ void DisplayMenu()
 void GetAllProducts()
 {
     Console.WriteLine("\n--- 所有產品列表 ---");
-    var products = ProductRepository.GetAllProducts();
-    if (products.Any())
+    //var products = productRepository.GetAllProducts();
+    var products = inventoryService.GetAllProducts();
+    Console.WriteLine("-----------------------------------------------");
+    Console.WriteLine("ID | Name | Price | Quantity | Status");
+    Console.WriteLine("-----------------------------------------------");
+    foreach (var product in products)
     {
-        Console.WriteLine("-----------------------------------------------");
-        Console.WriteLine("ID | Name | Price | Quantity | Status");
-        Console.WriteLine("-----------------------------------------------");
-        foreach (var product in products)
-        {
-            Console.WriteLine(product);
-        }
-        Console.WriteLine("-----------------------------------------------");
+        Console.WriteLine(product);
     }
+    Console.WriteLine("-----------------------------------------------");
+    
 }
 void SearchProduct()
 {
     Console.WriteLine("輸入欲查詢的產品編號");
     int input = ReadIntLine(1);
-    var product = ProductRepository.GetProductById(input);
+    var product = productRepository.GetProductById(input);
     // string input = Console.ReadLine();
     // var product = productRepository.GetProductById(ReadInt(input));
     if (product != null)
@@ -78,7 +79,7 @@ void AddProduct()
     decimal price = ReadDecimalLine();
     Console.WriteLine("輸入產品數量：");
     int quantity = ReadIntLine();
-    ProductRepository.AddProduct(name, price, quantity);
+    productRepository.AddProduct(name, price, quantity);
 }
 int ReadInt(string input)
 {
