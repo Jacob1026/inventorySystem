@@ -89,9 +89,32 @@ void AddProduct()
     decimal price = ReadDecimalLine();
     Console.WriteLine("輸入產品數量：");
     int quantity = ReadIntLine();
-    productRepository.AddProduct(name, price, quantity);
+    inventoryService.AddProduct(name,price,quantity);
     smsSeverice.NotifyUser(recipient:"Jacob","新增產品成功");
 }
+
+void UpdateProduct()
+{
+    Console.WriteLine("請輸入要更新產品的ID");
+    int input = ReadIntLine();
+    //找到對應產品
+    var product = inventoryService.GetProductById(input);
+    string name = product.Name;
+    decimal price = product.Price;
+    int quantity = product.Quantity;
+    if (product != null)
+    {
+        Console.WriteLine("輸入產品名稱：");
+        name = Console.ReadLine();
+        Console.WriteLine("輸入產品價格：");
+        price = ReadDecimalLine();
+        Console.WriteLine("輸入產品數量：");
+        quantity = ReadIntLine();
+    }
+    //seveice.Update
+    inventoryService.UpdateProduct(name,price,quantity);
+}
+
 int ReadInt(string input)
 {
     try

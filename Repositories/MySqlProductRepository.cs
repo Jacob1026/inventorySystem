@@ -23,7 +23,7 @@ public class MySqlProductRepository : IProductRepository
             {
                 connection.Open();
                 string creatTableSql = @"
-                 create table if not exists products( 
+                create table if not exists products( 
                      
                  id int primary key auto_increment,
                  name varchar(100) not null,
@@ -102,7 +102,28 @@ public class MySqlProductRepository : IProductRepository
 
         return product;
     }
-    public void AddProduct(string? name, decimal price, int quantity)
+    public void UpdateProduct(object product)
+    {
+        using (var connection = new MySqlConnection(_connectionString))
+        {
+            connection.Open();
+            string insertSql = @"UPDATE  products SET (name =@name, price = @price, quantity=@quantity, status =@status) 
+                WHERE id = @id";
+            using (MySqlCommand cmd = new MySqlCommand(insertSql, connection))
+            {
+                // 防止sql injection
+                //因為ID會自增所以可以不用給ID這個參數
+                cmd.Parameters.AddWithValue("@id", product.Id);
+                cmd.Parameters.AddWithValue("@name", product.Name);
+                cmd.Parameters.AddWithValue("@price", product.Price);
+                cmd.Parameters.AddWithValue("@quantity", product.Quantity); 
+                //todo refactor hard coed 已常數寫進程式
+                cmd.Parameters.AddWithValue("@status", product.Status);
+                cmd.ExecuteNonQuery();
+            }
+        }
+    }
+    public void AddProduct(Product product)
     {
         using (var connection = new MySqlConnection(_connectionString))
         {
@@ -112,13 +133,35 @@ public class MySqlProductRepository : IProductRepository
             using (MySqlCommand cmd = new MySqlCommand(insertSql, connection))
             {
                 // 防止sql injection
-                cmd.Parameters.AddWithValue("@name", name);
-                cmd.Parameters.AddWithValue("@price", price);
-                cmd.Parameters.AddWithValue("@quantity", quantity); 
-                //todo refactor
-                cmd.Parameters.AddWithValue("@status", 1);
+                //因為ID會自增所以可以不用給ID這個參數
+                cmd.Parameters.AddWithValue("@id", product.Id);
+                cmd.Parameters.AddWithValue("@name", product.Name);
+                cmd.Parameters.AddWithValue("@price", product.Price);
+                cmd.Parameters.AddWithValue("@quantity", product.Quantity); 
+                //todo refactor hard coed 已常數寫進程式
+                cmd.Parameters.AddWithValue("@status", product.Status);
                 cmd.ExecuteNonQuery();
             }
         }
     }
+
+    public int GetNexProductID()
+    {
+        using (var connection = new MySqlConnection(_connectionString))
+        {
+            connection.Open();
+            string selectSql = "SELECT IFNULL(MAX(id),0) FROM products ";
+            using (MySqlCommand cmd = new MySqlCommand(selectSql, connection))
+            {
+                var result = cmd.ExecuteScalar();
+                if (result != null)
+                {
+                    return Convert.ToInt32(result) +1;
+                }
+                return 0;
+            }
+        }
+    }
+
+
 }
