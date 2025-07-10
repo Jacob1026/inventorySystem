@@ -3,6 +3,8 @@
 using inventorySystem.Models;
 using inventorySystem.Repositories;
 using inventorySystem.Services;
+using inventorySystem.Utils;
+
 
 const string mysql_connetion_string = 
     "Server=localhost;Port=3306;Database=inventory_db;uid=root;pwd=Ji3g4284;";
@@ -10,6 +12,13 @@ const string mysql_connetion_string =
 //MySqlProductRepository ProductRepository = new MySqlProductRepository(mysql_connetion_string);
 IProductRepository productRepository = new MySqlProductRepository(mysql_connetion_string);
 InventoryService inventoryService = new InventoryService(productRepository);
+//通知相關功能
+//使用EmailNotifier
+EmailNotifier emailNotifier = new EmailNotifier();
+NotificationSeverice emailSeverice =new  NotificationSeverice(emailNotifier);
+
+SmsNotifier smsNotifier = new SmsNotifier();
+NotificationSeverice smsSeverice =new  NotificationSeverice(smsNotifier);
 void RunMenu()
 {
     while (true)
@@ -53,6 +62,7 @@ void GetAllProducts()
         Console.WriteLine(product);
     }
     Console.WriteLine("-----------------------------------------------");
+    emailSeverice.NotifyUser(recipient:"Jacob","查詢完成");
     
 }
 void SearchProduct()
@@ -80,6 +90,7 @@ void AddProduct()
     Console.WriteLine("輸入產品數量：");
     int quantity = ReadIntLine();
     productRepository.AddProduct(name, price, quantity);
+    smsSeverice.NotifyUser(recipient:"Jacob","新增產品成功");
 }
 int ReadInt(string input)
 {
