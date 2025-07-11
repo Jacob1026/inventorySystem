@@ -8,9 +8,42 @@ using inventorySystem.Utils;
 
 const string mysql_connetion_string = 
     "Server=localhost;Port=3306;Database=inventory_db;uid=root;pwd=Ji3g4284;";
+string connectingString ="";
+string configFile = "appsettings.ini";
+if (File.Exists(configFile))
+{
+    Console.WriteLine($"Reading config file: {configFile}");
+   
+    try
+    {
+        Dictionary<string,Dictionary<string,string>>config = ReadFile(configFile);
+        foreach (var Line in File.ReadAllLines(configFile))
+        {
+            Console.WriteLine(Line);
+        }
+
+        if (config.ContainsKey("Database"))
+        {
+            var dbConfig = config["Database"];
+            //<Sever,localhost>
+            //<Type,MySQL>
+            connectingString =$"Sever={dbConfig["Server"]};Port={dbConfig["Port"]};Uid={dbConfig["Uid"]};Pwd={dbConfig["Pwd"]}";
+        }
+    }
+    catch (Exception e)
+    {
+        Console.WriteLine($"錯誤:讀取檔案失敗:{e}");
+        connectingString = mysql_connetion_string;
+    }
+}
+else
+{
+    Console.WriteLine($"錯誤:配置檔案:{configFile}不存在");
+    connectingString = mysql_connetion_string;
+}
 
 //MySqlProductRepository ProductRepository = new MySqlProductRepository(mysql_connetion_string);
-IProductRepository productRepository = new MySqlProductRepository(mysql_connetion_string);
+IProductRepository productRepository = new MySqlProductRepository(connectingString);
 InventoryService inventoryService = new InventoryService(productRepository);
 //通知相關功能
 //使用EmailNotifier
@@ -32,6 +65,8 @@ void RunMenu()
             case "2": SearchProduct();
                 break;
             case "3": AddProduct();
+                break;
+            case "4": UpdateProduct();
                 break;
             case "0": 
                 Console.WriteLine("Goodbye !");
@@ -168,4 +203,33 @@ decimal ReadDecimalLine(decimal defaultValue = 0.0m)
             Console.WriteLine("請輸入有效數字。");
         }
     }
+} 
+
+Dictionary<string, Dictionary<string, string>> ReadFile(string s)
+{
+    var config = new Dictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
+    string currentSection = "";
+
+    foreach (string line in File.ReadLines(s))
+    {
+        string trimmedLine = line.Trim();
+        if (trimmedLine.StartsWith("#") || string.IsNullOrWhiteSpace(trimmedLine))
+        {
+            continue; // 跳過註釋和空行
+        }
+
+        if (trimmedLine.StartsWith("[") && trimmedLine.EndsWith("]"))
+        {
+            currentSection = trimmedLine.Substring(1, trimmedLine.Length - 2);
+            config[currentSection] = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        }
+        else if (currentSection != "" && trimmedLine.Contains("="))
+        {
+            int equalsIndex = trimmedLine.IndexOf('=');
+            string key = trimmedLine.Substring(0, equalsIndex).Trim();
+            string value = trimmedLine.Substring(equalsIndex + 1).Trim();
+            config[currentSection][key] = value;
+        }
+    }
+    return config;
 }
